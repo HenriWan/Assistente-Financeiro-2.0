@@ -11,19 +11,61 @@
 
     <main class="page">
 
-        <section class="hero" id="inicioArea">
-            <div class="badge">Assistente Financeiro</div>
+        <section class="hero ai-hero" id="inicioArea">
 
-            <h1>Organize sua vida financeira com ajuda personalizada</h1>
+            <div class="ai-grid"></div>
 
-            <p>
-                Responda o formulário, informe seu código de identificação
-                e receba um resumo financeiro baseado nas suas respostas.
-            </p>
+            <div class="code-orbit code-orbit-left">
+                <pre>
+<span>const renda = analisar(dados);</span>
+<span>if (saldo &lt; 0) alertar();</span>
+<span>modelo.gerarResumo();</span>
+<span>finance.ai.optimize();</span>
+                </pre>
+            </div>
 
-            <button id="btnComecar" class="btn primary">
-                Começar organização financeira
-            </button>
+            <div class="code-orbit code-orbit-right">
+                <pre>
+<span>{ "perfil": "financeiro" }</span>
+<span>await buscarPlanilha();</span>
+<span>score = IA.calcular();</span>
+<span>return recomendacao;</span>
+                </pre>
+            </div>
+
+            <div class="hero-content">
+                <div class="badge">Assistente Financeiro com IA</div>
+
+                <div class="ai-chip">
+                    <span class="pulse-dot"></span>
+                    Análise inteligente em tempo real
+                </div>
+
+                <h1>Organize sua vida financeira com ajuda personalizada</h1>
+
+                <p>
+                    Responda o formulário, informe seu código de identificação
+                    e receba um resumo financeiro baseado nas suas respostas.
+                </p>
+
+                <div class="mini-terminal">
+                    <div class="terminal-top">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+
+                    <div class="terminal-lines">
+                        <p><strong>&gt;</strong> lendo respostas financeiras...</p>
+                        <p><strong>&gt;</strong> calculando renda, gastos e saldo...</p>
+                        <p><strong>&gt;</strong> preparando recomendações personalizadas...</p>
+                    </div>
+                </div>
+
+                <button id="btnComecar" class="btn primary">
+                    Começar organização financeira
+                </button>
+            </div>
         </section>
 
         <section id="formularioArea" class="card hidden">
@@ -69,6 +111,12 @@
             </div>
 
             <div id="resultado" class="resultado hidden"></div>
+
+            <div class="restartArea">
+                <button id="btnReiniciar" class="btn restart">
+                    Reiniciar e voltar ao início
+                </button>
+            </div>
         </section>
 
         <button id="btnAbrirChat" class="btn secondary floating hidden">
