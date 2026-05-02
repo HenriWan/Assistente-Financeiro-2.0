@@ -1,6 +1,7 @@
 const btnComecar = document.getElementById("btnComecar");
 const btnAbrirChat = document.getElementById("btnAbrirChat");
 const btnGerarResumo = document.getElementById("btnGerarResumo");
+const btnReiniciar = document.getElementById("btnReiniciar");
 
 const inicioArea = document.getElementById("inicioArea");
 const formularioArea = document.getElementById("formularioArea");
@@ -118,6 +119,10 @@ btnGerarResumo.addEventListener("click", async () => {
             </p>
         `;
     }
+});
+
+btnReiniciar.addEventListener("click", () => {
+    window.location.href = "/";
 });
 
 codigoInput.addEventListener("keydown", (evento) => {
