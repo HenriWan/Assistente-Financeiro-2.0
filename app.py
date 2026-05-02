@@ -9,7 +9,9 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
+# Chave de sessão.
+# Em produção, o ideal é configurar SECRET_KEY no Google Cloud Run.
+app.secret_key = os.environ.get("SECRET_KEY", "assistente-financeiro-chave-dev")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -22,6 +24,11 @@ SHEET_NAME = "Respostas"
 
 APP_VERSION = "2.0.15.38.26"
 APP_AUTHOR = "Henrique Morais"
+
+# Login admin padrão.
+# Se configurar no Google Cloud Run, as variáveis de ambiente têm prioridade.
+ADMIN_USER_PADRAO = "henrique"
+ADMIN_PASSWORD_PADRAO = "Henri2026IA"
 
 
 @app.after_request
@@ -151,8 +158,8 @@ def encontrar_usuario_por_codigo_e_confirmacao(codigo, confirmacao):
     return None
 
 
-def gerar_resumo_financeiro(dados, idioma="pt"):
-    nome = pegar_valor(dados, ["Nome"]) or ("Usuário" if idioma == "pt" else "User")
+def gerar_resumo_financeiro(dados):
+    nome = pegar_valor(dados, ["Nome"]) or "Usuário"
 
     renda = limpar_valor(pegar_valor(dados, [
         "Renda mensal aproximada"
@@ -197,7 +204,7 @@ def gerar_resumo_financeiro(dados, idioma="pt"):
 
     objetivo = pegar_valor(dados, [
         "Principal objetivo financeiro"
-    ]) or ("Organizar melhor o dinheiro" if idioma == "pt" else "Organize money better")
+    ]) or "Organizar melhor o dinheiro"
 
     guardar = limpar_valor(pegar_valor(dados, [
         "Quanto gostaria de guardar por mês?",
@@ -208,28 +215,28 @@ def gerar_resumo_financeiro(dados, idioma="pt"):
         "Prazo para alcançar o objetivo",
         "Prazo para alcançar o objetivo ",
         "Prazo para alcancar o objetivo"
-    ]) or ("Não informado" if idioma == "pt" else "Not informed")
+    ]) or "Não informado"
 
     perfil = pegar_valor(dados, [
         "Como você se considera financeiramente?",
         "Como voce se considera financeiramente?"
-    ]) or ("Não informado" if idioma == "pt" else "Not informed")
+    ]) or "Não informado"
 
     cartao = pegar_valor(dados, [
         "Você usa cartão de crédito?",
         "Voce usa cartao de credito?"
-    ]) or ("Não informado" if idioma == "pt" else "Not informed")
+    ]) or "Não informado"
 
     anota = pegar_valor(dados, [
         "Você anota seus gastos?",
         "Voce anota seus gastos?"
-    ]) or ("Não informado" if idioma == "pt" else "Not informed")
+    ]) or "Não informado"
 
     preocupacao = pegar_valor(dados, [
         "Maior preocupação financeira agora",
         "Maior preocupação financeira agor",
         "Maior preocupacao financeira agora"
-    ]) or ("Não informado" if idioma == "pt" else "Not informed")
+    ]) or "Não informado"
 
     renda_total = renda + renda_extra
     gastos_totais = moradia + alimentacao + transporte + internet + saude + lazer
@@ -242,38 +249,21 @@ def gerar_resumo_financeiro(dados, idioma="pt"):
 
     dicas = []
 
-    if idioma == "en":
-        if saldo < 0:
-            dicas.append("Your expenses are higher than your income. The first step is to reduce variable expenses and avoid new debt.")
-        elif guardar > 0 and saldo < guardar:
-            dicas.append("You cannot yet save the desired amount every month. Start with a smaller goal and increase it gradually.")
-        else:
-            dicas.append("You may be able to save money monthly. Separate this amount as soon as you receive your income.")
-
-        if dividas > 0:
-            dicas.append("Since you have debt, prioritize paying it off or renegotiating it before taking on new commitments.")
-
-        if "sim" in normalizar_texto(cartao):
-            dicas.append("Use your credit card with a controlled limit. Avoid long installments and review your bill weekly.")
-
-        if "nao" in normalizar_texto(anota) or "as vezes" in normalizar_texto(anota):
-            dicas.append("Start writing down all expenses for 7 days. This helps you see where your money is going.")
+    if saldo < 0:
+        dicas.append("Seus gastos estão maiores que sua renda. O primeiro passo é reduzir gastos variáveis e evitar novas dívidas.")
+    elif guardar > 0 and saldo < guardar:
+        dicas.append("Você ainda não consegue guardar o valor desejado todo mês. Comece com uma meta menor e aumente aos poucos.")
     else:
-        if saldo < 0:
-            dicas.append("Seus gastos estão maiores que sua renda. O primeiro passo é reduzir gastos variáveis e evitar novas dívidas.")
-        elif guardar > 0 and saldo < guardar:
-            dicas.append("Você ainda não consegue guardar o valor desejado todo mês. Comece com uma meta menor e aumente aos poucos.")
-        else:
-            dicas.append("Você tem possibilidade de guardar dinheiro mensalmente. Separe esse valor assim que receber sua renda.")
+        dicas.append("Você tem possibilidade de guardar dinheiro mensalmente. Separe esse valor assim que receber sua renda.")
 
-        if dividas > 0:
-            dicas.append("Como existem dívidas, priorize quitar ou renegociar essas dívidas antes de assumir novos compromissos.")
+    if dividas > 0:
+        dicas.append("Como existem dívidas, priorize quitar ou renegociar essas dívidas antes de assumir novos compromissos.")
 
-        if "sim" in normalizar_texto(cartao):
-            dicas.append("Use o cartão de crédito com limite controlado. Evite parcelamentos longos e acompanhe a fatura toda semana.")
+    if "sim" in normalizar_texto(cartao):
+        dicas.append("Use o cartão de crédito com limite controlado. Evite parcelamentos longos e acompanhe a fatura toda semana.")
 
-        if "nao" in normalizar_texto(anota) or "as vezes" in normalizar_texto(anota):
-            dicas.append("Comece anotando todos os gastos por 7 dias. Isso ajuda a enxergar para onde o dinheiro está indo.")
+    if "nao" in normalizar_texto(anota) or "as vezes" in normalizar_texto(anota):
+        dicas.append("Comece anotando todos os gastos por 7 dias. Isso ajuda a enxergar para onde o dinheiro está indo.")
 
     return {
         "nome": nome,
@@ -296,19 +286,15 @@ def gerar_resumo():
 
     codigo = dados_requisicao.get("codigo", "")
     confirmacao = dados_requisicao.get("confirmacao", "")
-    idioma = dados_requisicao.get("idioma", "pt")
-
-    if idioma not in ["pt", "en"]:
-        idioma = "pt"
 
     if not codigo.strip():
         return jsonify({
-            "erro": "Digite seu Código de identificação." if idioma == "pt" else "Enter your identification code."
+            "erro": "Digite seu Código de identificação."
         }), 400
 
     if not confirmacao.strip():
         return jsonify({
-            "erro": "Digite sua Confirmação de segurança." if idioma == "pt" else "Enter your security confirmation."
+            "erro": "Digite sua Confirmação de segurança."
         }), 400
 
     usuario = encontrar_usuario_por_codigo_e_confirmacao(codigo, confirmacao)
@@ -316,11 +302,9 @@ def gerar_resumo():
     if usuario is None:
         return jsonify({
             "erro": "Código ou confirmação incorretos. Confira se você digitou igual ao formulário."
-            if idioma == "pt"
-            else "Incorrect code or security confirmation. Check if you typed it exactly as in the form."
         }), 404
 
-    resumo = gerar_resumo_financeiro(usuario, idioma)
+    resumo = gerar_resumo_financeiro(usuario)
 
     return jsonify(resumo)
 
@@ -376,18 +360,8 @@ def ler_feedbacks():
 
 @app.route("/admin-login", methods=["POST"])
 def admin_login():
-    admin_user = os.environ.get("ADMIN_USER")
-    admin_password = os.environ.get("ADMIN_PASSWORD")
-
-    if not admin_user or not admin_password:
-        return render_template(
-            "admin.html",
-            logado=False,
-            erro="Admin ainda não configurado. Configure ADMIN_USER e ADMIN_PASSWORD no Google Cloud Run.",
-            feedbacks=[],
-            app_version=APP_VERSION,
-            app_author=APP_AUTHOR
-        ), 403
+    admin_user = os.environ.get("ADMIN_USER", ADMIN_USER_PADRAO)
+    admin_password = os.environ.get("ADMIN_PASSWORD", ADMIN_PASSWORD_PADRAO)
 
     usuario = request.form.get("usuario", "")
     senha = request.form.get("senha", "")
@@ -442,4 +416,4 @@ def logout():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=True)git status
