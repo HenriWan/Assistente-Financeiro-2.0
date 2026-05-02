@@ -19,26 +19,19 @@ btnComecar.addEventListener("click", () => {
 });
 
 btnAbrirChat.addEventListener("click", () => {
-    // Esconde a área inicial e o formulário
     inicioArea.classList.add("hidden");
     formularioArea.classList.add("hidden");
-
-    // Esconde o botão flutuante
     btnAbrirChat.classList.add("hidden");
 
-    // Mostra o chat
     chatArea.classList.remove("hidden");
 
-    // Ativa o modo focado no chat
     document.body.classList.add("chat-focused");
 
-    // Leva a tela para o topo
     window.scrollTo({
         top: 0,
         behavior: "smooth"
     });
 
-    // Foca no campo do código
     setTimeout(() => {
         codigoInput.focus();
     }, 500);
@@ -48,10 +41,12 @@ btnGerarResumo.addEventListener("click", async () => {
     const codigo = codigoInput.value.trim();
 
     resultado.classList.remove("hidden");
+    resultado.classList.remove("erro");
     resultado.innerHTML = "<p>Buscando seus dados e gerando resumo...</p>";
 
     if (!codigo) {
-        resultado.innerHTML = "<p>Digite seu Código de identificação antes de gerar o resumo.</p>";
+        resultado.classList.add("erro");
+        resultado.innerHTML = "<p><strong>Digite seu Código de identificação antes de gerar o resumo.</strong></p>";
         return;
     }
 
@@ -67,9 +62,12 @@ btnGerarResumo.addEventListener("click", async () => {
         const dados = await resposta.json();
 
         if (!resposta.ok) {
-            resultado.innerHTML = `<p>${dados.erro}</p>`;
+            resultado.classList.add("erro");
+            resultado.innerHTML = `<p><strong>${dados.erro}</strong></p>`;
             return;
         }
+
+        resultado.classList.remove("erro");
 
         const saldoFormatado = formatarMoeda(dados.saldo);
         const rendaFormatada = formatarMoeda(dados.renda_total);
@@ -110,10 +108,13 @@ btnGerarResumo.addEventListener("click", async () => {
     } catch (erro) {
         console.error(erro);
 
+        resultado.classList.add("erro");
         resultado.innerHTML = `
             <p>
-                Ocorreu um erro ao gerar o resumo. Verifique se o servidor está rodando
-                e se a planilha está pública para visualização.
+                <strong>
+                    Ocorreu um erro ao gerar o resumo. Verifique se a planilha está pública
+                    e se o código foi digitado corretamente.
+                </strong>
             </p>
         `;
     }

@@ -155,10 +155,18 @@ body {
 .resultado {
     margin-top: 20px;
     background: #f8fafc;
-    color: #0f172a;
+    color: #0f172a !important;
     border-radius: 18px;
     padding: 20px;
     line-height: 1.6;
+}
+
+.resultado p,
+.resultado h3,
+.resultado h4,
+.resultado li,
+.resultado strong {
+    color: #0f172a !important;
 }
 
 .resultado h3 {
@@ -180,6 +188,17 @@ body {
     margin: 16px 0;
     border: none;
     border-top: 1px solid #cbd5e1;
+}
+
+.resultado.erro {
+    background: #fff7ed;
+    color: #7c2d12 !important;
+    border: 1px solid #fed7aa;
+}
+
+.resultado.erro p,
+.resultado.erro strong {
+    color: #7c2d12 !important;
 }
 
 .hidden {

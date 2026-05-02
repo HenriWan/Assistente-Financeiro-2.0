@@ -2,17 +2,14 @@ from flask import Flask, render_template, request, jsonify
 import csv
 import urllib.request
 from io import StringIO
+import unicodedata
+import time
+import os
 
 app = Flask(__name__)
 
-# Link original da sua planilha:
-# https://docs.google.com/spreadsheets/d/1TaDywZhawAkCIbqysq-7J68vKOWBEd7UjkRjU9mh2SQ/edit?usp=sharing
-
 SHEET_ID = "1TaDywZhawAkCIbqysq-7J68vKOWBEd7UjkRjU9mh2SQ"
 SHEET_NAME = "Respostas"
-
-# Link CSV da aba Respostas
-CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
 
 
 @app.route("/")
@@ -20,10 +17,32 @@ def index():
     return render_template("index.html")
 
 
+def normalizar_texto(texto):
+    """
+    Remove acentos, espaços extras e deixa tudo minúsculo.
+    Isso ajuda a comparar código e nomes de colunas.
+    """
+    if texto is None:
+        return ""
+
+    texto = str(texto).strip().lower()
+
+    texto = unicodedata.normalize("NFD", texto)
+    texto = "".join(
+        caractere for caractere in texto
+        if unicodedata.category(caractere) != "Mn"
+    )
+
+    texto = " ".join(texto.split())
+
+    return texto
+
+
 def limpar_valor(valor):
     """
     Transforma textos como:
-    'R$ 300', '300', '2.000', '2000' em número float.
+    'R$ 300', '300', '2.000', '2000', '1.500,50'
+    em número float.
     """
     if not valor:
         return 0.0
@@ -52,9 +71,17 @@ def limpar_valor(valor):
 def buscar_dados_planilha():
     """
     Busca os dados da Planilha Google em formato CSV.
+    O cache_buster evita pegar dados antigos.
     """
     try:
-        with urllib.request.urlopen(CSV_URL) as resposta:
+        cache_buster = int(time.time())
+
+        csv_url = (
+            f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq"
+            f"?tqx=out:csv&sheet={SHEET_NAME}&cache={cache_buster}"
+        )
+
+        with urllib.request.urlopen(csv_url) as resposta:
             dados = resposta.read().decode("utf-8")
 
         arquivo_csv = StringIO(dados)
@@ -67,71 +94,150 @@ def buscar_dados_planilha():
         return []
 
 
+def pegar_valor(linha, nomes_possiveis):
+    """
+    Pega o valor de uma coluna mesmo se o nome tiver acento,
+    espaço a mais ou pequenas diferenças.
+    """
+    for chave, valor in linha.items():
+        chave_normalizada = normalizar_texto(chave)
+
+        for nome in nomes_possiveis:
+            if normalizar_texto(nome) == chave_normalizada:
+                return valor
+
+    return ""
+
+
 def encontrar_usuario_por_codigo(codigo):
-    """
-    Procura uma pessoa pelo Código de identificação.
-    """
-    codigo = codigo.strip().lower()
+    codigo_digitado = normalizar_texto(codigo)
     linhas = buscar_dados_planilha()
 
     for linha in linhas:
-        codigo_planilha = linha.get("Código de identificação", "").strip().lower()
+        codigo_planilha = pegar_valor(linha, [
+            "Código de identificação",
+            "Codigo de identificacao",
+            "Código",
+            "Codigo",
+            "ID",
+            "Identificação",
+            "Identificacao"
+        ])
 
-        if codigo_planilha == codigo:
+        if normalizar_texto(codigo_planilha) == codigo_digitado:
             return linha
 
     return None
 
 
 def gerar_resumo_financeiro(dados):
-    nome = dados.get("Nome", "Usuário")
+    nome = pegar_valor(dados, ["Nome"]) or "Usuário"
 
-    renda = limpar_valor(dados.get("Renda mensal aproximada", "0"))
-    renda_extra = limpar_valor(dados.get("Valor da renda extra ", "0"))
+    renda = limpar_valor(pegar_valor(dados, [
+        "Renda mensal aproximada"
+    ]))
 
-    moradia = limpar_valor(dados.get("Gasto mensal com moradia", "0"))
-    alimentacao = limpar_valor(dados.get("Gasto mensal com alimentação", "0"))
-    transporte = limpar_valor(dados.get("Gasto mensal com transporte", "0"))
-    internet = limpar_valor(dados.get("Gasto mensal com internet, celular e assinaturas", "0"))
-    saude = limpar_valor(dados.get("Gasto mensal com saúde", "0"))
-    lazer = limpar_valor(dados.get("Gasto mensal com lazer e compras pessoais ", "0"))
-    dividas = limpar_valor(dados.get("Valor aproximado das dívidas", "0"))
+    renda_extra = limpar_valor(pegar_valor(dados, [
+        "Valor da renda extra",
+        "Valor da renda extra "
+    ]))
 
-    objetivo = dados.get("Principal objetivo financeiro", "Organizar melhor o dinheiro")
-    guardar = limpar_valor(dados.get("Quanto gostaria de guardar por mês?", "0"))
-    prazo = dados.get("Prazo para alcançar o objetivo ", "Não informado")
-    perfil = dados.get("Como você se considera financeiramente?", "Não informado")
-    cartao = dados.get("Você usa cartão de crédito?", "Não informado")
-    anota = dados.get("Você anota seus gastos?", "Não informado")
-    preocupacao = dados.get("Maior preocupação financeira agor", "Não informado")
+    moradia = limpar_valor(pegar_valor(dados, [
+        "Gasto mensal com moradia"
+    ]))
+
+    alimentacao = limpar_valor(pegar_valor(dados, [
+        "Gasto mensal com alimentação",
+        "Gasto mensal com alimentacao"
+    ]))
+
+    transporte = limpar_valor(pegar_valor(dados, [
+        "Gasto mensal com transporte"
+    ]))
+
+    internet = limpar_valor(pegar_valor(dados, [
+        "Gasto mensal com internet, celular e assinaturas"
+    ]))
+
+    saude = limpar_valor(pegar_valor(dados, [
+        "Gasto mensal com saúde",
+        "Gasto mensal com saude"
+    ]))
+
+    lazer = limpar_valor(pegar_valor(dados, [
+        "Gasto mensal com lazer e compras pessoais",
+        "Gasto mensal com lazer e compras pessoais "
+    ]))
+
+    dividas = limpar_valor(pegar_valor(dados, [
+        "Valor aproximado das dívidas",
+        "Valor aproximado das dividas"
+    ]))
+
+    objetivo = pegar_valor(dados, [
+        "Principal objetivo financeiro"
+    ]) or "Organizar melhor o dinheiro"
+
+    guardar = limpar_valor(pegar_valor(dados, [
+        "Quanto gostaria de guardar por mês?",
+        "Quanto gostaria de guardar por mes?"
+    ]))
+
+    prazo = pegar_valor(dados, [
+        "Prazo para alcançar o objetivo",
+        "Prazo para alcançar o objetivo ",
+        "Prazo para alcancar o objetivo"
+    ]) or "Não informado"
+
+    perfil = pegar_valor(dados, [
+        "Como você se considera financeiramente?",
+        "Como voce se considera financeiramente?"
+    ]) or "Não informado"
+
+    cartao = pegar_valor(dados, [
+        "Você usa cartão de crédito?",
+        "Voce usa cartao de credito?"
+    ]) or "Não informado"
+
+    anota = pegar_valor(dados, [
+        "Você anota seus gastos?",
+        "Voce anota seus gastos?"
+    ]) or "Não informado"
+
+    preocupacao = pegar_valor(dados, [
+        "Maior preocupação financeira agora",
+        "Maior preocupação financeira agor",
+        "Maior preocupacao financeira agora"
+    ]) or "Não informado"
 
     renda_total = renda + renda_extra
     gastos_totais = moradia + alimentacao + transporte + internet + saude + lazer
     saldo = renda_total - gastos_totais
 
     porcentagem_gastos = 0
+
     if renda_total > 0:
         porcentagem_gastos = (gastos_totais / renda_total) * 100
 
     dicas = []
 
     if saldo < 0:
-        dicas.append("Seus gastos estão maiores que sua renda. O primeiro passo é cortar ou reduzir gastos variáveis, principalmente lazer, compras pessoais e assinaturas.")
-    elif saldo < guardar:
+        dicas.append("Seus gastos estão maiores que sua renda. O primeiro passo é reduzir gastos variáveis e evitar novas dívidas.")
+    elif guardar > 0 and saldo < guardar:
         dicas.append("Você ainda não consegue guardar o valor desejado todo mês. Comece com uma meta menor e aumente aos poucos.")
     else:
-        dicas.append("Você tem possibilidade de guardar dinheiro mensalmente. O ideal é separar esse valor assim que receber sua renda.")
+        dicas.append("Você tem possibilidade de guardar dinheiro mensalmente. Separe esse valor assim que receber sua renda.")
 
     if dividas > 0:
-        dicas.append("Como existem dívidas, priorize quitar as dívidas antes de assumir novos compromissos financeiros.")
+        dicas.append("Como existem dívidas, priorize quitar ou renegociar essas dívidas antes de assumir novos compromissos.")
 
-    if str(cartao).strip().lower() in ["sim", "s"]:
+    if "sim" in normalizar_texto(cartao):
         dicas.append("Use o cartão de crédito com limite controlado. Evite parcelamentos longos e acompanhe a fatura toda semana.")
 
-    if "não" in str(anota).lower() or "as vezes" in str(anota).lower() or "às vezes" in str(anota).lower():
-        dicas.append("Comece anotando todos os gastos por 7 dias. Isso já ajuda a enxergar para onde o dinheiro está indo.")
+    if "nao" in normalizar_texto(anota) or "as vezes" in normalizar_texto(anota):
+        dicas.append("Comece anotando todos os gastos por 7 dias. Isso ajuda a enxergar para onde o dinheiro está indo.")
 
-    resumo = {
+    return {
         "nome": nome,
         "renda_total": renda_total,
         "gastos_totais": gastos_totais,
@@ -144,8 +250,6 @@ def gerar_resumo_financeiro(dados):
         "preocupacao": preocupacao,
         "dicas": dicas
     }
-
-    return resumo
 
 
 @app.route("/gerar-resumo", methods=["POST"])
@@ -171,7 +275,5 @@ def gerar_resumo():
 
 
 if __name__ == "__main__":
-    import os
-
     port = int(os.environ.get("PORT", 8080))
     app.run(host="0.0.0.0", port=port, debug=True)
