@@ -83,6 +83,29 @@
                 Eles serão necessários para abrir seu resumo.
             </p>
 
+            <div class="mobileFormNotice">
+                <h3>Formulário financeiro</h3>
+
+                <p>
+                    No celular, o Google Forms pode não aparecer dentro da página por causa das permissões de cookies do Google.
+                    Para evitar erro, abra o formulário pelo botão abaixo.
+                </p>
+
+                <a
+                    class="btn primary formExternalButton"
+                    href="https://forms.gle/pwaqHcGnep8P5S648"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    Abrir formulário
+                </a>
+
+                <p class="smallNote">
+                    Depois de responder, volte para esta página e clique em
+                    <strong>“Já respondi, abrir chat”</strong>.
+                </p>
+            </div>
+
             <div class="iframeBox">
                 <iframe
                     src="https://docs.google.com/forms/d/e/1FAIpQLScyK7yjTvEm2z-7GSTCkEpwCjpikL7hLiC44x_sZnc3dSwiFQ/viewform?embedded=true"
@@ -184,9 +207,26 @@
             <h2>Acesso Admin</h2>
             <p>Área restrita para manutenção do sistema.</p>
 
-            <form action="/admin-login" method="POST" class="admin-form">
-                <input type="text" name="usuario" placeholder="Usuário admin" required />
-                <input type="password" name="senha" placeholder="Senha admin" required />
+            <form action="/admin-login" method="POST" class="admin-form" autocomplete="off">
+                <input
+                    type="text"
+                    name="usuario"
+                    placeholder="Usuário admin"
+                    autocomplete="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    required
+                />
+
+                <input
+                    type="password"
+                    name="senha"
+                    placeholder="Senha admin"
+                    autocomplete="new-password"
+                    autocapitalize="off"
+                    spellcheck="false"
+                    required
+                />
 
                 <button class="btn primary" type="submit">
                     Entrar
