@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" id="htmlRoot">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -34,16 +34,16 @@
             </div>
 
             <div class="hero-content">
-                <div class="badge">Assistente Financeiro com IA</div>
+                <div class="badge" data-i18n="badge">Assistente Financeiro com IA</div>
 
                 <div class="ai-chip">
                     <span class="pulse-dot"></span>
-                    Análise inteligente em tempo real
+                    <span data-i18n="aiChip">Análise inteligente em tempo real</span>
                 </div>
 
-                <h1>Organize sua vida financeira com ajuda personalizada</h1>
+                <h1 data-i18n="heroTitle">Organize sua vida financeira com ajuda personalizada</h1>
 
-                <p>
+                <p data-i18n="heroSubtitle">
                     Responda o formulário, informe seu código de identificação
                     e receba um resumo financeiro baseado nas suas respostas.
                 </p>
@@ -56,24 +56,29 @@
                     </div>
 
                     <div class="terminal-lines">
-                        <p><strong>&gt;</strong> lendo respostas financeiras...</p>
-                        <p><strong>&gt;</strong> calculando renda, gastos e saldo...</p>
-                        <p><strong>&gt;</strong> preparando recomendações personalizadas...</p>
+                        <p><strong>&gt;</strong> <span data-i18n="terminal1">lendo respostas financeiras...</span></p>
+                        <p><strong>&gt;</strong> <span data-i18n="terminal2">calculando renda, gastos e saldo...</span></p>
+                        <p><strong>&gt;</strong> <span data-i18n="terminal3">preparando recomendações personalizadas...</span></p>
                     </div>
                 </div>
 
-                <button id="btnComecar" class="btn primary" type="button">
+                <button id="btnComecar" class="btn primary" type="button" data-i18n="startButton">
                     Começar organização financeira
                 </button>
+
+                <p class="privacy-note" data-i18n="privacyNote">
+                    Seus dados são usados apenas para gerar o resumo financeiro.
+                    Para acessar, será necessário informar o código e a confirmação de segurança.
+                </p>
             </div>
         </section>
 
         <section id="formularioArea" class="card hidden">
-            <h2>1. Responda o formulário</h2>
+            <h2 data-i18n="formTitle">1. Responda o formulário</h2>
 
-            <p>
-                Preencha com atenção. Depois de responder, clique no botão
-                <strong>“Já respondi, abrir chat”</strong> que ficará visível na tela.
+            <p data-i18n="formText">
+                Preencha com atenção. Anote seu Código de identificação e sua Confirmação de segurança.
+                Eles serão necessários para abrir seu resumo.
             </p>
 
             <div class="iframeBox">
@@ -90,11 +95,11 @@
         </section>
 
         <section id="chatArea" class="card chat-card hidden">
-            <h2>2. Chat financeiro</h2>
+            <h2 data-i18n="chatTitle">2. Chat financeiro</h2>
 
             <div class="chatBox">
-                <div class="message bot">
-                    Olá! Agora digite o mesmo Código de identificação que você colocou no formulário.
+                <div class="message bot" data-i18n="chatMessage">
+                    Olá! Digite o mesmo Código de identificação e a Confirmação de segurança que você colocou no formulário.
                 </div>
             </div>
 
@@ -102,10 +107,20 @@
                 <input
                     type="text"
                     id="codigoInput"
-                    placeholder="Exemplo: henrique123"
+                    placeholder="Código de identificação"
+                    data-i18n-placeholder="codePlaceholder"
+                    autocomplete="off"
                 />
 
-                <button id="btnGerarResumo" class="btn primary" type="button">
+                <input
+                    type="password"
+                    id="confirmacaoInput"
+                    placeholder="Confirmação de segurança"
+                    data-i18n-placeholder="securityPlaceholder"
+                    autocomplete="off"
+                />
+
+                <button id="btnGerarResumo" class="btn primary" type="button" data-i18n="generateButton">
                     Gerar resumo
                 </button>
             </div>
@@ -113,17 +128,115 @@
             <div id="resultado" class="resultado hidden"></div>
 
             <div class="restartArea">
-                <button id="btnReiniciar" class="btn restart" type="button" onclick="window.location.href='/'">
+                <button id="btnReiniciar" class="btn restart" type="button" onclick="window.location.href='/'" data-i18n="restartButton">
                     Reiniciar e voltar ao início
                 </button>
             </div>
         </section>
 
-        <button id="btnAbrirChat" class="btn secondary floating hidden" type="button">
+        <button id="btnAbrirChat" class="btn secondary floating hidden" type="button" data-i18n="openChatButton">
             Já respondi, abrir chat
         </button>
 
+        <footer class="site-footer">
+            <p>by {{ app_author }} • <span data-i18n="versionLabel">Versão</span> {{ app_version }}</p>
+        </footer>
+
     </main>
+
+    <div class="floating-tools" aria-label="Ferramentas do sistema">
+        <button class="tool-button" id="btnFeedback" title="Enviar feedback" type="button">
+            💬
+        </button>
+
+        <button class="tool-button" id="btnAcessibilidade" title="Acessibilidade" type="button">
+            ♿
+        </button>
+
+        <button class="tool-button" id="btnIdioma" title="Idioma" type="button">
+            🌐
+        </button>
+
+        <button class="tool-button" id="btnAdmin" title="Admin" type="button">
+            ⚙
+        </button>
+    </div>
+
+    <div class="modal hidden" id="feedbackModal">
+        <div class="modal-content">
+            <button class="modal-close" data-close="feedbackModal" type="button">×</button>
+
+            <h2 data-i18n="feedbackTitle">Enviar feedback</h2>
+            <p data-i18n="feedbackText">Conte o que você achou ou o que precisa melhorar.</p>
+
+            <input type="text" id="feedbackNome" placeholder="Seu nome, opcional" data-i18n-placeholder="feedbackNamePlaceholder" />
+
+            <textarea id="feedbackMensagem" placeholder="Digite seu feedback" data-i18n-placeholder="feedbackMessagePlaceholder"></textarea>
+
+            <button class="btn primary" id="btnEnviarFeedback" type="button" data-i18n="sendFeedbackButton">
+                Enviar feedback
+            </button>
+
+            <div id="feedbackStatus" class="modal-status"></div>
+        </div>
+    </div>
+
+    <div class="modal hidden" id="adminModal">
+        <div class="modal-content">
+            <button class="modal-close" data-close="adminModal" type="button">×</button>
+
+            <h2 data-i18n="adminTitle">Acesso Admin</h2>
+            <p data-i18n="adminText">Área restrita para manutenção do sistema.</p>
+
+            <form action="/admin-login" method="POST" class="admin-form">
+                <input type="text" name="usuario" placeholder="Usuário admin" data-i18n-placeholder="adminUserPlaceholder" required />
+                <input type="password" name="senha" placeholder="Senha admin" data-i18n-placeholder="adminPasswordPlaceholder" required />
+
+                <button class="btn primary" type="submit" data-i18n="adminLoginButton">
+                    Entrar
+                </button>
+            </form>
+
+            <button id="btnEsqueciSenha" class="forgot-link" type="button" data-i18n="forgotPasswordButton">
+                Esqueci minha senha
+            </button>
+
+            <div id="forgotBox" class="forgot-box hidden">
+                <h3 data-i18n="forgotTitle">Recuperar acesso admin</h3>
+
+                <p data-i18n="forgotText">
+                    Por segurança, a senha do admin não fica salva visível no site.
+                    Para redefinir, altere a variável ADMIN_PASSWORD no Google Cloud Run.
+                </p>
+
+                <p data-i18n="forgotCommandText">Use este comando no terminal:</p>
+
+                <code>gcloud run services update assistente-financeiro-2-0 --region southamerica-east1 --update-env-vars ADMIN_PASSWORD=NOVA_SENHA_FORTE</code>
+
+                <p data-i18n="forgotFinalText">
+                    Depois faça login novamente usando o usuário admin e a nova senha.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="access-panel hidden" id="accessPanel">
+        <h3 data-i18n="accessTitle">Acessibilidade</h3>
+
+        <button type="button" id="btnAumentarFonte" data-i18n="increaseFont">A+ Aumentar fonte</button>
+        <button type="button" id="btnDiminuirFonte" data-i18n="decreaseFont">A- Diminuir fonte</button>
+        <button type="button" id="btnContraste" data-i18n="contrast">Alto contraste</button>
+        <button type="button" id="btnModoClaro" data-i18n="lightMode">Modo claro</button>
+        <button type="button" id="btnReducaoAnimacao" data-i18n="reduceMotion">Reduzir animações</button>
+        <button type="button" id="btnResetAcessibilidade" data-i18n="resetAccess">Resetar</button>
+    </div>
+
+    <div class="language-panel hidden" id="languagePanel">
+        <h3 data-i18n="languageTitle">Idioma</h3>
+
+        <button type="button" data-lang="pt">Português</button>
+        <button type="button" data-lang="en">English</button>
+    </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

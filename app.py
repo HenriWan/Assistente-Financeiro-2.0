@@ -1,49 +1,62 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 import csv
 import urllib.request
 from io import StringIO
 import unicodedata
 import time
 import os
+from datetime import datetime
 
 app = Flask(__name__)
+
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-key-change-me")
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=True
+)
 
 SHEET_ID = "1TaDywZhawAkCIbqysq-7J68vKOWBEd7UjkRjU9mh2SQ"
 SHEET_NAME = "Respostas"
 
+APP_VERSION = "2.0.15.38.26"
+APP_AUTHOR = "Henrique Morais"
+
+
+@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "SAMEORIGIN"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+        app_version=APP_VERSION,
+        app_author=APP_AUTHOR
+    )
 
 
 def normalizar_texto(texto):
-    """
-    Remove acentos, espaços extras e deixa tudo minúsculo.
-    Isso ajuda a comparar código e nomes de colunas.
-    """
     if texto is None:
         return ""
 
     texto = str(texto).strip().lower()
-
     texto = unicodedata.normalize("NFD", texto)
     texto = "".join(
         caractere for caractere in texto
         if unicodedata.category(caractere) != "Mn"
     )
-
     texto = " ".join(texto.split())
 
     return texto
 
 
 def limpar_valor(valor):
-    """
-    Transforma textos como:
-    'R$ 300', '300', '2.000', '2000', '1.500,50'
-    em número float.
-    """
     if not valor:
         return 0.0
 
@@ -69,10 +82,6 @@ def limpar_valor(valor):
 
 
 def buscar_dados_planilha():
-    """
-    Busca os dados da Planilha Google em formato CSV.
-    O cache_buster evita pegar dados antigos.
-    """
     try:
         cache_buster = int(time.time())
 
@@ -95,10 +104,6 @@ def buscar_dados_planilha():
 
 
 def pegar_valor(linha, nomes_possiveis):
-    """
-    Pega o valor de uma coluna mesmo se o nome tiver acento,
-    espaço a mais ou pequenas diferenças.
-    """
     for chave, valor in linha.items():
         chave_normalizada = normalizar_texto(chave)
 
@@ -109,8 +114,10 @@ def pegar_valor(linha, nomes_possiveis):
     return ""
 
 
-def encontrar_usuario_por_codigo(codigo):
+def encontrar_usuario_por_codigo_e_confirmacao(codigo, confirmacao):
     codigo_digitado = normalizar_texto(codigo)
+    confirmacao_digitada = normalizar_texto(confirmacao)
+
     linhas = buscar_dados_planilha()
 
     for linha in linhas:
@@ -124,14 +131,28 @@ def encontrar_usuario_por_codigo(codigo):
             "Identificacao"
         ])
 
-        if normalizar_texto(codigo_planilha) == codigo_digitado:
+        confirmacao_planilha = pegar_valor(linha, [
+            "Confirmação de segurança",
+            "Confirmacao de seguranca",
+            "Confirmação",
+            "Confirmacao",
+            "Senha de segurança",
+            "Senha de seguranca",
+            "Palavra de segurança",
+            "Palavra de seguranca"
+        ])
+
+        if (
+            normalizar_texto(codigo_planilha) == codigo_digitado
+            and normalizar_texto(confirmacao_planilha) == confirmacao_digitada
+        ):
             return linha
 
     return None
 
 
-def gerar_resumo_financeiro(dados):
-    nome = pegar_valor(dados, ["Nome"]) or "Usuário"
+def gerar_resumo_financeiro(dados, idioma="pt"):
+    nome = pegar_valor(dados, ["Nome"]) or ("Usuário" if idioma == "pt" else "User")
 
     renda = limpar_valor(pegar_valor(dados, [
         "Renda mensal aproximada"
@@ -176,7 +197,7 @@ def gerar_resumo_financeiro(dados):
 
     objetivo = pegar_valor(dados, [
         "Principal objetivo financeiro"
-    ]) or "Organizar melhor o dinheiro"
+    ]) or ("Organizar melhor o dinheiro" if idioma == "pt" else "Organize money better")
 
     guardar = limpar_valor(pegar_valor(dados, [
         "Quanto gostaria de guardar por mês?",
@@ -187,28 +208,28 @@ def gerar_resumo_financeiro(dados):
         "Prazo para alcançar o objetivo",
         "Prazo para alcançar o objetivo ",
         "Prazo para alcancar o objetivo"
-    ]) or "Não informado"
+    ]) or ("Não informado" if idioma == "pt" else "Not informed")
 
     perfil = pegar_valor(dados, [
         "Como você se considera financeiramente?",
         "Como voce se considera financeiramente?"
-    ]) or "Não informado"
+    ]) or ("Não informado" if idioma == "pt" else "Not informed")
 
     cartao = pegar_valor(dados, [
         "Você usa cartão de crédito?",
         "Voce usa cartao de credito?"
-    ]) or "Não informado"
+    ]) or ("Não informado" if idioma == "pt" else "Not informed")
 
     anota = pegar_valor(dados, [
         "Você anota seus gastos?",
         "Voce anota seus gastos?"
-    ]) or "Não informado"
+    ]) or ("Não informado" if idioma == "pt" else "Not informed")
 
     preocupacao = pegar_valor(dados, [
         "Maior preocupação financeira agora",
         "Maior preocupação financeira agor",
         "Maior preocupacao financeira agora"
-    ]) or "Não informado"
+    ]) or ("Não informado" if idioma == "pt" else "Not informed")
 
     renda_total = renda + renda_extra
     gastos_totais = moradia + alimentacao + transporte + internet + saude + lazer
@@ -221,21 +242,38 @@ def gerar_resumo_financeiro(dados):
 
     dicas = []
 
-    if saldo < 0:
-        dicas.append("Seus gastos estão maiores que sua renda. O primeiro passo é reduzir gastos variáveis e evitar novas dívidas.")
-    elif guardar > 0 and saldo < guardar:
-        dicas.append("Você ainda não consegue guardar o valor desejado todo mês. Comece com uma meta menor e aumente aos poucos.")
+    if idioma == "en":
+        if saldo < 0:
+            dicas.append("Your expenses are higher than your income. The first step is to reduce variable expenses and avoid new debt.")
+        elif guardar > 0 and saldo < guardar:
+            dicas.append("You cannot yet save the desired amount every month. Start with a smaller goal and increase it gradually.")
+        else:
+            dicas.append("You may be able to save money monthly. Separate this amount as soon as you receive your income.")
+
+        if dividas > 0:
+            dicas.append("Since you have debt, prioritize paying it off or renegotiating it before taking on new commitments.")
+
+        if "sim" in normalizar_texto(cartao):
+            dicas.append("Use your credit card with a controlled limit. Avoid long installments and review your bill weekly.")
+
+        if "nao" in normalizar_texto(anota) or "as vezes" in normalizar_texto(anota):
+            dicas.append("Start writing down all expenses for 7 days. This helps you see where your money is going.")
     else:
-        dicas.append("Você tem possibilidade de guardar dinheiro mensalmente. Separe esse valor assim que receber sua renda.")
+        if saldo < 0:
+            dicas.append("Seus gastos estão maiores que sua renda. O primeiro passo é reduzir gastos variáveis e evitar novas dívidas.")
+        elif guardar > 0 and saldo < guardar:
+            dicas.append("Você ainda não consegue guardar o valor desejado todo mês. Comece com uma meta menor e aumente aos poucos.")
+        else:
+            dicas.append("Você tem possibilidade de guardar dinheiro mensalmente. Separe esse valor assim que receber sua renda.")
 
-    if dividas > 0:
-        dicas.append("Como existem dívidas, priorize quitar ou renegociar essas dívidas antes de assumir novos compromissos.")
+        if dividas > 0:
+            dicas.append("Como existem dívidas, priorize quitar ou renegociar essas dívidas antes de assumir novos compromissos.")
 
-    if "sim" in normalizar_texto(cartao):
-        dicas.append("Use o cartão de crédito com limite controlado. Evite parcelamentos longos e acompanhe a fatura toda semana.")
+        if "sim" in normalizar_texto(cartao):
+            dicas.append("Use o cartão de crédito com limite controlado. Evite parcelamentos longos e acompanhe a fatura toda semana.")
 
-    if "nao" in normalizar_texto(anota) or "as vezes" in normalizar_texto(anota):
-        dicas.append("Comece anotando todos os gastos por 7 dias. Isso ajuda a enxergar para onde o dinheiro está indo.")
+        if "nao" in normalizar_texto(anota) or "as vezes" in normalizar_texto(anota):
+            dicas.append("Comece anotando todos os gastos por 7 dias. Isso ajuda a enxergar para onde o dinheiro está indo.")
 
     return {
         "nome": nome,
@@ -254,24 +292,152 @@ def gerar_resumo_financeiro(dados):
 
 @app.route("/gerar-resumo", methods=["POST"])
 def gerar_resumo():
-    dados_requisicao = request.get_json()
+    dados_requisicao = request.get_json() or {}
+
     codigo = dados_requisicao.get("codigo", "")
+    confirmacao = dados_requisicao.get("confirmacao", "")
+    idioma = dados_requisicao.get("idioma", "pt")
+
+    if idioma not in ["pt", "en"]:
+        idioma = "pt"
 
     if not codigo.strip():
         return jsonify({
-            "erro": "Digite seu Código de identificação."
+            "erro": "Digite seu Código de identificação." if idioma == "pt" else "Enter your identification code."
         }), 400
 
-    usuario = encontrar_usuario_por_codigo(codigo)
+    if not confirmacao.strip():
+        return jsonify({
+            "erro": "Digite sua Confirmação de segurança." if idioma == "pt" else "Enter your security confirmation."
+        }), 400
+
+    usuario = encontrar_usuario_por_codigo_e_confirmacao(codigo, confirmacao)
 
     if usuario is None:
         return jsonify({
-            "erro": "Código não encontrado. Confira se você digitou igual ao que colocou no formulário."
+            "erro": "Código ou confirmação incorretos. Confira se você digitou igual ao formulário."
+            if idioma == "pt"
+            else "Incorrect code or security confirmation. Check if you typed it exactly as in the form."
         }), 404
 
-    resumo = gerar_resumo_financeiro(usuario)
+    resumo = gerar_resumo_financeiro(usuario, idioma)
 
     return jsonify(resumo)
+
+
+@app.route("/feedback", methods=["POST"])
+def feedback():
+    dados = request.get_json() or {}
+
+    nome = str(dados.get("nome", "Anônimo")).strip()[:80]
+    mensagem = str(dados.get("mensagem", "")).strip()[:1000]
+
+    if not mensagem:
+        return jsonify({"erro": "Digite uma mensagem de feedback."}), 400
+
+    data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    try:
+        arquivo_existe = os.path.exists("feedbacks.csv")
+
+        with open("feedbacks.csv", "a", newline="", encoding="utf-8") as arquivo:
+            escritor = csv.writer(arquivo)
+
+            if not arquivo_existe:
+                escritor.writerow(["data_hora", "nome", "mensagem"])
+
+            escritor.writerow([data_hora, nome, mensagem])
+
+        return jsonify({"mensagem": "Feedback enviado com sucesso."})
+
+    except Exception as erro:
+        print("Erro ao salvar feedback:", erro)
+        return jsonify({"erro": "Não foi possível salvar o feedback agora."}), 500
+
+
+def ler_feedbacks():
+    feedbacks = []
+
+    if not os.path.exists("feedbacks.csv"):
+        return feedbacks
+
+    try:
+        with open("feedbacks.csv", "r", encoding="utf-8") as arquivo:
+            leitor = csv.DictReader(arquivo)
+
+            for linha in leitor:
+                feedbacks.append(linha)
+
+    except Exception as erro:
+        print("Erro ao ler feedbacks:", erro)
+
+    return list(reversed(feedbacks))
+
+
+@app.route("/admin-login", methods=["POST"])
+def admin_login():
+    admin_user = os.environ.get("ADMIN_USER")
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+
+    if not admin_user or not admin_password:
+        return render_template(
+            "admin.html",
+            logado=False,
+            erro="Admin ainda não configurado. Configure ADMIN_USER e ADMIN_PASSWORD no Google Cloud Run.",
+            feedbacks=[],
+            app_version=APP_VERSION,
+            app_author=APP_AUTHOR
+        ), 403
+
+    usuario = request.form.get("usuario", "")
+    senha = request.form.get("senha", "")
+
+    if usuario == admin_user and senha == admin_password:
+        session["admin_logado"] = True
+        return redirect(url_for("admin"))
+
+    return render_template(
+        "admin.html",
+        logado=False,
+        erro="Usuário ou senha incorretos.",
+        feedbacks=[],
+        app_version=APP_VERSION,
+        app_author=APP_AUTHOR
+    ), 401
+
+
+@app.route("/admin")
+def admin():
+    if not session.get("admin_logado"):
+        return render_template(
+            "admin.html",
+            logado=False,
+            erro=None,
+            feedbacks=[],
+            app_version=APP_VERSION,
+            app_author=APP_AUTHOR
+        )
+
+    feedbacks = ler_feedbacks()
+    total_respostas = len(buscar_dados_planilha())
+
+    return render_template(
+        "admin.html",
+        logado=True,
+        erro=None,
+        feedbacks=feedbacks,
+        total_respostas=total_respostas,
+        app_version=APP_VERSION,
+        app_author=APP_AUTHOR,
+        sheet_id=SHEET_ID,
+        sheet_name=SHEET_NAME
+    )
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("index"))
 
 
 if __name__ == "__main__":
