@@ -4,6 +4,10 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     font-family: Arial, Helvetica, sans-serif;
     background:
@@ -77,7 +81,7 @@ body {
     padding: 14px 20px;
     font-size: 16px;
     font-weight: bold;
-    transition: transform 0.2s ease, opacity 0.2s ease;
+    transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn:hover {
@@ -93,7 +97,6 @@ body {
 .secondary {
     background: #3b82f6;
     color: white;
-    margin-top: 18px;
 }
 
 .iframeBox {
@@ -101,6 +104,10 @@ body {
     overflow: hidden;
     border-radius: 18px;
     background: white;
+}
+
+.chat-card {
+    min-height: calc(100vh - 64px);
 }
 
 .chatBox {
@@ -141,6 +148,10 @@ body {
     font-size: 16px;
 }
 
+.inputArea input::placeholder {
+    color: #94a3b8;
+}
+
 .resultado {
     margin-top: 20px;
     background: #f8fafc;
@@ -155,13 +166,55 @@ body {
     font-size: 24px;
 }
 
+.resultado h4 {
+    margin-top: 14px;
+    margin-bottom: 8px;
+}
+
 .resultado ul {
     margin-left: 20px;
     margin-top: 10px;
 }
 
+.resultado hr {
+    margin: 16px 0;
+    border: none;
+    border-top: 1px solid #cbd5e1;
+}
+
 .hidden {
-    display: none;
+    display: none !important;
+}
+
+/* Botão flutuante para abrir o chat */
+.floating {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 999;
+    width: auto;
+    min-width: 260px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.floating:hover {
+    transform: translateX(-50%) translateY(-2px);
+}
+
+/* Quando o usuário vai para o chat */
+.chat-focused #inicioArea,
+.chat-focused #formularioArea {
+    display: none !important;
+}
+
+.chat-focused #chatArea {
+    display: block !important;
+    margin-top: 0;
+}
+
+.chat-focused .page {
+    padding-top: 24px;
 }
 
 @media (max-width: 600px) {
@@ -188,5 +241,15 @@ body {
 
     iframe {
         height: 620px;
+    }
+
+    .floating {
+        width: calc(100% - 32px);
+        min-width: auto;
+        bottom: 16px;
+    }
+
+    .chat-card {
+        min-height: calc(100vh - 36px);
     }
 }

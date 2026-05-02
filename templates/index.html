@@ -11,7 +11,7 @@
 
     <main class="page">
 
-        <section class="hero">
+        <section class="hero" id="inicioArea">
             <div class="badge">Assistente Financeiro</div>
 
             <h1>Organize sua vida financeira com ajuda personalizada</h1>
@@ -30,8 +30,8 @@
             <h2>1. Responda o formulário</h2>
 
             <p>
-                Preencha com atenção. Depois de responder, volte aqui e clique em
-                <strong>“Já respondi, abrir chat”</strong>.
+                Preencha com atenção. Depois de responder, clique no botão
+                <strong>“Já respondi, abrir chat”</strong> que ficará visível na tela.
             </p>
 
             <div class="iframeBox">
@@ -45,13 +45,9 @@
                     Carregando…
                 </iframe>
             </div>
-
-            <button id="btnAbrirChat" class="btn secondary">
-                Já respondi, abrir chat
-            </button>
         </section>
 
-        <section id="chatArea" class="card hidden">
+        <section id="chatArea" class="card chat-card hidden">
             <h2>2. Chat financeiro</h2>
 
             <div class="chatBox">
@@ -74,6 +70,10 @@
 
             <div id="resultado" class="resultado hidden"></div>
         </section>
+
+        <button id="btnAbrirChat" class="btn secondary floating hidden">
+            Já respondi, abrir chat
+        </button>
 
     </main>
 

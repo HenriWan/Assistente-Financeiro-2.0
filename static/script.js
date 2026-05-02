@@ -2,6 +2,7 @@ const btnComecar = document.getElementById("btnComecar");
 const btnAbrirChat = document.getElementById("btnAbrirChat");
 const btnGerarResumo = document.getElementById("btnGerarResumo");
 
+const inicioArea = document.getElementById("inicioArea");
 const formularioArea = document.getElementById("formularioArea");
 const chatArea = document.getElementById("chatArea");
 const codigoInput = document.getElementById("codigoInput");
@@ -9,18 +10,38 @@ const resultado = document.getElementById("resultado");
 
 btnComecar.addEventListener("click", () => {
     formularioArea.classList.remove("hidden");
+    btnAbrirChat.classList.remove("hidden");
 
     formularioArea.scrollIntoView({
-        behavior: "smooth"
+        behavior: "smooth",
+        block: "start"
     });
 });
 
 btnAbrirChat.addEventListener("click", () => {
+    // Esconde a área inicial e o formulário
+    inicioArea.classList.add("hidden");
+    formularioArea.classList.add("hidden");
+
+    // Esconde o botão flutuante
+    btnAbrirChat.classList.add("hidden");
+
+    // Mostra o chat
     chatArea.classList.remove("hidden");
 
-    chatArea.scrollIntoView({
+    // Ativa o modo focado no chat
+    document.body.classList.add("chat-focused");
+
+    // Leva a tela para o topo
+    window.scrollTo({
+        top: 0,
         behavior: "smooth"
     });
+
+    // Foca no campo do código
+    setTimeout(() => {
+        codigoInput.focus();
+    }, 500);
 });
 
 btnGerarResumo.addEventListener("click", async () => {
@@ -81,6 +102,11 @@ btnGerarResumo.addEventListener("click", async () => {
             <ul>${dicasHtml}</ul>
         `;
 
+        resultado.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
     } catch (erro) {
         console.error(erro);
 
@@ -90,6 +116,12 @@ btnGerarResumo.addEventListener("click", async () => {
                 e se a planilha está pública para visualização.
             </p>
         `;
+    }
+});
+
+codigoInput.addEventListener("keydown", (evento) => {
+    if (evento.key === "Enter") {
+        btnGerarResumo.click();
     }
 });
 
