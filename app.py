@@ -9,8 +9,6 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# Chave de sessão.
-# Em produção, o ideal é configurar SECRET_KEY no Google Cloud Run.
 app.secret_key = os.environ.get("SECRET_KEY", "assistente-financeiro-chave-dev")
 
 app.config.update(
@@ -25,8 +23,6 @@ SHEET_NAME = "Respostas"
 APP_VERSION = "2.0.15.38.26"
 APP_AUTHOR = "Henrique Morais"
 
-# Login admin padrão.
-# Se configurar no Google Cloud Run, as variáveis de ambiente têm prioridade.
 ADMIN_USER_PADRAO = "henrique"
 ADMIN_PASSWORD_PADRAO = "Henri2026IA"
 
@@ -121,9 +117,8 @@ def pegar_valor(linha, nomes_possiveis):
     return ""
 
 
-def encontrar_usuario_por_codigo_e_confirmacao(codigo, confirmacao):
+def encontrar_usuario_por_codigo(codigo):
     codigo_digitado = normalizar_texto(codigo)
-    confirmacao_digitada = normalizar_texto(confirmacao)
 
     linhas = buscar_dados_planilha()
 
@@ -138,21 +133,7 @@ def encontrar_usuario_por_codigo_e_confirmacao(codigo, confirmacao):
             "Identificacao"
         ])
 
-        confirmacao_planilha = pegar_valor(linha, [
-            "Confirmação de segurança",
-            "Confirmacao de seguranca",
-            "Confirmação",
-            "Confirmacao",
-            "Senha de segurança",
-            "Senha de seguranca",
-            "Palavra de segurança",
-            "Palavra de seguranca"
-        ])
-
-        if (
-            normalizar_texto(codigo_planilha) == codigo_digitado
-            and normalizar_texto(confirmacao_planilha) == confirmacao_digitada
-        ):
+        if normalizar_texto(codigo_planilha) == codigo_digitado:
             return linha
 
     return None
@@ -285,23 +266,17 @@ def gerar_resumo():
     dados_requisicao = request.get_json() or {}
 
     codigo = dados_requisicao.get("codigo", "")
-    confirmacao = dados_requisicao.get("confirmacao", "")
 
     if not codigo.strip():
         return jsonify({
             "erro": "Digite seu Código de identificação."
         }), 400
 
-    if not confirmacao.strip():
-        return jsonify({
-            "erro": "Digite sua Confirmação de segurança."
-        }), 400
-
-    usuario = encontrar_usuario_por_codigo_e_confirmacao(codigo, confirmacao)
+    usuario = encontrar_usuario_por_codigo(codigo)
 
     if usuario is None:
         return jsonify({
-            "erro": "Código ou confirmação incorretos. Confira se você digitou igual ao formulário."
+            "erro": "Código não encontrado. Confira se você digitou igual ao que colocou no formulário."
         }), 404
 
     resumo = gerar_resumo_financeiro(usuario)

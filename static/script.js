@@ -7,7 +7,6 @@ const inicioArea = document.getElementById("inicioArea");
 const formularioArea = document.getElementById("formularioArea");
 const chatArea = document.getElementById("chatArea");
 const codigoInput = document.getElementById("codigoInput");
-const confirmacaoInput = document.getElementById("confirmacaoInput");
 const resultado = document.getElementById("resultado");
 
 const btnFeedback = document.getElementById("btnFeedback");
@@ -54,7 +53,6 @@ btnAbrirChat.addEventListener("click", () => {
 
 btnGerarResumo.addEventListener("click", async () => {
     const codigo = codigoInput.value.trim();
-    const confirmacao = confirmacaoInput.value.trim();
 
     resultado.classList.remove("hidden");
     resultado.classList.remove("erro");
@@ -66,12 +64,6 @@ btnGerarResumo.addEventListener("click", async () => {
         return;
     }
 
-    if (!confirmacao) {
-        resultado.classList.add("erro");
-        resultado.innerHTML = "<p><strong>Digite sua Confirmação de segurança.</strong></p>";
-        return;
-    }
-
     try {
         const resposta = await fetch("/gerar-resumo", {
             method: "POST",
@@ -79,8 +71,7 @@ btnGerarResumo.addEventListener("click", async () => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                codigo,
-                confirmacao
+                codigo
             })
         });
 
@@ -150,12 +141,6 @@ btnReiniciar.addEventListener("click", () => {
 });
 
 codigoInput.addEventListener("keydown", (evento) => {
-    if (evento.key === "Enter") {
-        confirmacaoInput.focus();
-    }
-});
-
-confirmacaoInput.addEventListener("keydown", (evento) => {
     if (evento.key === "Enter") {
         btnGerarResumo.click();
     }
