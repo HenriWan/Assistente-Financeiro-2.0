@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assistente Financeiro</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+    <main class="page">
+
+        <section class="hero">
+            <div class="badge">Assistente Financeiro</div>
+
+            <h1>Organize sua vida financeira com ajuda personalizada</h1>
+
+            <p>
+                Responda o formulário, informe seu código de identificação
+                e receba um resumo financeiro baseado nas suas respostas.
+            </p>
+
+            <button id="btnComecar" class="btn primary">
+                Começar organização financeira
+            </button>
+        </section>
+
+        <section id="formularioArea" class="card hidden">
+            <h2>1. Responda o formulário</h2>
+
+            <p>
+                Preencha com atenção. Depois de responder, volte aqui e clique em
+                <strong>“Já respondi, abrir chat”</strong>.
+            </p>
+
+            <div class="iframeBox">
+                <iframe
+                    src="https://docs.google.com/forms/d/e/1FAIpQLScyK7yjTvEm2z-7GSTCkEpwCjpikL7hLiC44x_sZnc3dSwiFQ/viewform?embedded=true"
+                    width="100%"
+                    height="720"
+                    frameborder="0"
+                    marginheight="0"
+                    marginwidth="0">
+                    Carregando…
+                </iframe>
+            </div>
+
+            <button id="btnAbrirChat" class="btn secondary">
+                Já respondi, abrir chat
+            </button>
+        </section>
+
+        <section id="chatArea" class="card hidden">
+            <h2>2. Chat financeiro</h2>
+
+            <div class="chatBox">
+                <div class="message bot">
+                    Olá! Agora digite o mesmo Código de identificação que você colocou no formulário.
+                </div>
+            </div>
+
+            <div class="inputArea">
+                <input
+                    type="text"
+                    id="codigoInput"
+                    placeholder="Exemplo: henrique123"
+                />
+
+                <button id="btnGerarResumo" class="btn primary">
+                    Gerar resumo
+                </button>
+            </div>
+
+            <div id="resultado" class="resultado hidden"></div>
+        </section>
+
+    </main>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
