@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin • Assistente Financeiro</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+    <main class="page admin-page">
+
+        <section class="card admin-card">
+
+            {% if not logado %}
+                <h1>Área Admin</h1>
+                <p>Faça login para acessar o painel administrativo.</p>
+
+                {% if erro %}
+                    <div class="resultado erro">
+                        <p><strong>{{ erro }}</strong></p>
+                    </div>
+                {% endif %}
+
+                <form action="/admin-login" method="POST" class="admin-form">
+                    <input type="text" name="usuario" placeholder="Usuário admin" required />
+                    <input type="password" name="senha" placeholder="Senha admin" required />
+
+                    <button class="btn primary" type="submit">
+                        Entrar
+                    </button>
+                </form>
+
+                <a href="/" class="admin-link">Voltar ao site</a>
+            {% else %}
+                <div class="admin-header">
+                    <div>
+                        <h1>Painel Administrativo</h1>
+                        <p>Assistente Financeiro • Versão {{ app_version }}</p>
+                    </div>
+
+                    <a href="/logout" class="btn restart admin-logout">Sair</a>
+                </div>
+
+                <div class="admin-grid">
+                    <div class="admin-box">
+                        <span>Total de respostas</span>
+                        <strong>{{ total_respostas }}</strong>
+                    </div>
+
+                    <div class="admin-box">
+                        <span>Aba conectada</span>
+                        <strong>{{ sheet_name }}</strong>
+                    </div>
+
+                    <div class="admin-box">
+                        <span>Autor</span>
+                        <strong>{{ app_author }}</strong>
+                    </div>
+                </div>
+
+                <div class="admin-section">
+                    <h2>Links úteis</h2>
+
+                    <p>
+                        <strong>Planilha:</strong>
+                        <br>
+                        <a href="https://docs.google.com/spreadsheets/d/{{ sheet_id }}" target="_blank">
+                            Abrir Google Planilhas
+                        </a>
+                    </p>
+                </div>
+
+                <div class="admin-section">
+                    <h2>Feedbacks recebidos</h2>
+
+                    {% if feedbacks %}
+                        <div class="feedback-list">
+                            {% for item in feedbacks %}
+                                <div class="feedback-item">
+                                    <strong>{{ item.nome }}</strong>
+                                    <small>{{ item.data_hora }}</small>
+                                    <p>{{ item.mensagem }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>Nenhum feedback recebido ainda.</p>
+                    {% endif %}
+                </div>
+
+                <a href="/" class="admin-link">Voltar ao site</a>
+            {% endif %}
+
+        </section>
+
+        <footer class="site-footer">
+            <p>by {{ app_author }} • Versão {{ app_version }}</p>
+        </footer>
+
+    </main>
+
+</body>
+</html>
